@@ -1,59 +1,80 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using ECommon.Serializing;
+using System.Linq;
+using ECommon.Logging;
+using ENode.Infrastructure;
 
 namespace ENode.Domain.Impl
 {
-    /// <summary>Default implementation of IMemoryCache which using ConcurrentDictionary.
-    /// </summary>
     public class DefaultMemoryCache : IMemoryCache
     {
-        private readonly ConcurrentDictionary<string, byte[]> _cacheDict = new ConcurrentDictionary<string, byte[]>();
-        private readonly IBinarySerializer _binarySerializer;
+        private readonly ConcurrentDictionary<string, IAggregateRoot> _aggregateRootDict = new ConcurrentDictionary<string, IAggregateRoot>();
+        private readonly IAggregateStorage _aggregateStorage;
+        private readonly ITypeCodeProvider _aggregateRootTypeCodeProvider;
+        private readonly ILogger _logger;
 
-        /// <summary>Parameterized constructor.
-        /// </summary>
-        /// <param name="binarySerializer"></param>
-        public DefaultMemoryCache(IBinarySerializer binarySerializer)
+        public DefaultMemoryCache(ITypeCodeProvider aggregateRootTypeCodeProvider, IAggregateStorage aggregateStorage, ILoggerFactory loggerFactory)
         {
-            _binarySerializer = binarySerializer;
+            _aggregateRootTypeCodeProvider = aggregateRootTypeCodeProvider;
+            _aggregateStorage = aggregateStorage;
+            _logger = loggerFactory.Create(GetType().FullName);
         }
 
-        /// <summary>Get an aggregate from memory cache.
-        /// </summary>
-        /// <param name="aggregateRootId"></param>
-        /// <param name="aggregateRootType"></param>
-        /// <returns></returns>
         public IAggregateRoot Get(object aggregateRootId, Type aggregateRootType)
         {
             if (aggregateRootId == null) throw new ArgumentNullException("aggregateRootId");
-            byte[] value;
-            if (_cacheDict.TryGetValue(aggregateRootId.ToString(), out value))
+            IAggregateRoot aggregateRoot;
+            if (_aggregateRootDict.TryGetValue(aggregateRootId.ToString(), out aggregateRoot))
             {
-                return _binarySerializer.Deserialize(value, aggregateRootType) as IAggregateRoot;
+                if (aggregateRoot.GetType() != aggregateRootType)
+                {
+                    throw new Exception(string.Format("Incorrect aggregate root type, current aggregateRootId:{0}, type:{1}, expecting type:{2}", aggregateRootId, aggregateRoot.GetType(), aggregateRootType));
+                }
+                if (aggregateRoot.GetChanges().Count() > 0)
+                {
+                    var lastestAggregateRoot = _aggregateStorage.Get(aggregateRootType, aggregateRootId.ToString());
+                    if (lastestAggregateRoot != null)
+                    {
+                        _aggregateRootDict[aggregateRoot.UniqueId] = lastestAggregateRoot;
+                    }
+                    return lastestAggregateRoot;
+                }
+                return aggregateRoot;
             }
             return null;
         }
-        /// <summary>Get a strong type aggregate from memory cache.
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="aggregateRootId"></param>
-        /// <returns></returns>
         public T Get<T>(object aggregateRootId) where T : class, IAggregateRoot
         {
             return Get(aggregateRootId, typeof(T)) as T;
         }
-        /// <summary>Set an aggregate to memory cache.
-        /// </summary>
-        /// <param name="aggregateRoot"></param>
-        /// <exception cref="ArgumentNullException"></exception>
         public void Set(IAggregateRoot aggregateRoot)
         {
             if (aggregateRoot == null)
             {
                 throw new ArgumentNullException("aggregateRoot");
             }
-            _cacheDict[aggregateRoot.UniqueId] = _binarySerializer.Serialize(aggregateRoot);
+            _aggregateRootDict[aggregateRoot.UniqueId] = aggregateRoot;
+        }
+        public void RefreshAggregateFromEventStore(int aggregateRootTypeCode, string aggregateRootId)
+        {
+            try
+            {
+                var aggregateRootType = _aggregateRootTypeCodeProvider.GetType(aggregateRootTypeCode);
+                if (aggregateRootType == null)
+                {
+                    _logger.ErrorFormat("Could not find aggregate root type by aggregate root type code [{0}].", aggregateRootTypeCode);
+                    return;
+                }
+                var aggregateRoot = _aggregateStorage.Get(aggregateRootType, aggregateRootId);
+                if (aggregateRoot != null)
+                {
+                    _aggregateRootDict[aggregateRoot.UniqueId] = aggregateRoot;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(string.Format("Exception raised when refreshing aggregate from event store, aggregateRootTypeCode:{0}, aggregateRootId:{1}", aggregateRootTypeCode, aggregateRootId), ex);
+            }
         }
     }
 }

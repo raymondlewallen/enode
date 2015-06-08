@@ -8,8 +8,8 @@ namespace ENode.Domain
     {
         /// <summary>Get an aggregate from memory cache, if not exist, get it from event store.
         /// </summary>
-        /// <typeparam name="T"></typeparam>
         /// <param name="aggregateRootId"></param>
+        /// <typeparam name="T"></typeparam>
         /// <returns></returns>
         T Get<T>(object aggregateRootId) where T : class, IAggregateRoot;
         /// <summary>Get an aggregate from memory cache, if not exist, get it from event store.

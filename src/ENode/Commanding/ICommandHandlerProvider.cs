@@ -1,20 +1,16 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace ENode.Commanding
 {
-    /// <summary>Represents a provider which provide the command handler for command.
+    /// <summary>Represents a provider to provide the command handlers.
     /// </summary>
     public interface ICommandHandlerProvider
     {
-        /// <summary>Get the command handler for the given command.
+        /// <summary>Get all the handlers for the given command type.
         /// </summary>
-        /// <param name="command"></param>
+        /// <param name="commandType"></param>
         /// <returns></returns>
-        ICommandHandler GetCommandHandler(ICommand command);
-        /// <summary>Check whether a given type is a command handler type.
-        /// </summary>
-        /// <param name="type"></param>
-        /// <returns></returns>
-        bool IsCommandHandler(Type type);
+        IEnumerable<ICommandHandlerProxy> GetHandlers(Type commandType);
     }
 }

@@ -8,17 +8,12 @@ using ENode.Infrastructure;
 
 namespace ENode.Domain.Impl
 {
-    /// <summary>The default implementation of IAggregateRootInternalHandlerProvider and IAssemblyInitializer.
-    /// </summary>
     public class DefaultAggregateRootInternalHandlerProvider : IAggregateRootInternalHandlerProvider, IAssemblyInitializer
     {
         private readonly IDictionary<Type, IDictionary<Type, Action<IAggregateRoot, IDomainEvent>>> _mappings = new Dictionary<Type, IDictionary<Type, Action<IAggregateRoot, IDomainEvent>>>();
         private readonly BindingFlags bindingFlags = BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly;
         private readonly Type[] parameterTypes = new Type[] { typeof(IAggregateRoot), typeof(IDomainEvent) };
 
-        /// <summary>Initialize from the given assemblies.
-        /// </summary>
-        /// <param name="assemblies"></param>
         public void Initialize(params Assembly[] assemblies)
         {
             foreach (var assembly in assemblies)
@@ -38,12 +33,6 @@ namespace ENode.Domain.Impl
                 }
             }
         }
-
-        /// <summary>Get the internal event handler within the aggregate.
-        /// </summary>
-        /// <param name="aggregateRootType"></param>
-        /// <param name="eventType"></param>
-        /// <returns></returns>
         public Action<IAggregateRoot, IDomainEvent> GetInternalEventHandler(Type aggregateRootType, Type eventType)
         {
             IDictionary<Type, Action<IAggregateRoot, IDomainEvent>> eventHandlerDic;
@@ -64,7 +53,7 @@ namespace ENode.Domain.Impl
 
             if (eventHandlerDic.ContainsKey(eventType))
             {
-                throw new ENodeException("Found duplicated event handler on aggregate. Aggregate type:{0}, event type:{1}", aggregateRootType.FullName, eventType.FullName);
+                throw new Exception(string.Format("Found duplicated event handler on aggregate, aggregate type:{0}, event type:{1}", aggregateRootType.FullName, eventType.FullName));
             }
             eventHandlerDic.Add(eventType, DelegateFactory.CreateDelegate<Action<IAggregateRoot, IDomainEvent>>(eventHandler, parameterTypes));
         }

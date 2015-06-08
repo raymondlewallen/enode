@@ -5,7 +5,7 @@ namespace ENode.Infrastructure
     /// <summary>Represents a concurrent exception.
     /// </summary>
     [Serializable]
-    public class ConcurrentException : ENodeException
+    public class ConcurrentException : Exception
     {
         /// <summary>Default constructor.
         /// </summary>
@@ -23,6 +23,12 @@ namespace ENode.Infrastructure
         /// </summary>
         /// <param name="message"></param>
         /// <param name="args"></param>
-        public ConcurrentException(string message, params object[] args) : base(message, args) { }
+        public ConcurrentException(string message, params object[] args) : base(string.Format(message, args)) { }
+        /// <summary>Parameterized constructor.
+        /// </summary>
+        /// <param name="message"></param>
+        /// <param name="innerException"></param>
+        /// <param name="args"></param>
+        public ConcurrentException(string message, Exception innerException, params object[] args) : base(string.Format(message, args), innerException) { }
     }
 }

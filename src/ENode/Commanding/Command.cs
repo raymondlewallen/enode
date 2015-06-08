@@ -1,5 +1,4 @@
 ﻿using System;
-using ECommon.Utilities;
 using ENode.Infrastructure;
 
 namespace ENode.Commanding
@@ -7,89 +6,81 @@ namespace ENode.Commanding
     /// <summary>Represents an abstract command.
     /// </summary>
     [Serializable]
-    public abstract class Command<TAggregateRootId> : ICommand
+    public abstract class Command : Message, ICommand
     {
-        private TAggregateRootId _aggregateRootId;
-        private string _aggregateRootStringId;
-        private int _retryCount;
-        public const int DefaultRetryCount = 5;
-        public const int MaxRetryCount = 50;
+        /// <summary>Represents the associated aggregate root id.
+        /// </summary>
+        public string AggregateRootId { get; set; }
 
-        /// <summary>Represents the unique identifier of the command.
+        /// <summary>Default constructor.
         /// </summary>
-        public string Id { get; private set; }
-        /// <summary>Get or set the count which the command should be retry. The retry count must small than the MaxRetryCount;
+        public Command() : base() { }
+        /// <summary>Parameterized constructor.
         /// </summary>
-        public int RetryCount
+        /// <param name="aggregateRootId"></param>
+        public Command(string aggregateRootId)
         {
-            get
+            if (aggregateRootId == null)
             {
-                return _retryCount;
+                throw new ArgumentNullException("aggregateRootId");
             }
-            set
-            {
-                if (value > MaxRetryCount)
-                {
-                    throw new ENodeException("Command retry count cannot exceed {0}.", MaxRetryCount);
-                }
-                _retryCount = value;
-            }
+            AggregateRootId = aggregateRootId;
         }
-        /// <summary>Represents the id of aggregate root which is created or updated by the command.
+
+        /// <summary>Returns the aggregate root id by default.
         /// </summary>
-        public TAggregateRootId AggregateRootId
+        /// <returns></returns>
+        public override string GetRoutingKey()
         {
-            get
-            {
-                return _aggregateRootId;
-            }
+            return AggregateRootId;
         }
-        /// <summary>Represents the id of the aggregate root, this property is only used by framework.
+    }
+    /// <summary>Represents an abstract command with generic aggregate root id.
+    /// </summary>
+    [Serializable]
+    public abstract class Command<TAggregateRootId> : Message, ICommand
+    {
+        /// <summary>Represents the associated aggregate root id.
         /// </summary>
+        public TAggregateRootId AggregateRootId { get; set; }
+
+        /// <summary>Default constructor.
+        /// </summary>
+        public Command() : base() { }
+        /// <summary>Parameterized constructor.
+        /// </summary>
+        /// <param name="aggregateRootId"></param>
+        public Command(TAggregateRootId aggregateRootId)
+        {
+            if (aggregateRootId == null)
+            {
+                throw new ArgumentNullException("aggregateRootId");
+            }
+            AggregateRootId = aggregateRootId;
+        }
+
         string ICommand.AggregateRootId
         {
             get
             {
-                if (_aggregateRootStringId == null && _aggregateRootId != null)
+                if (this.AggregateRootId != null)
                 {
-                    _aggregateRootStringId = _aggregateRootId.ToString();
+                    return this.AggregateRootId.ToString();
                 }
-                return _aggregateRootStringId;
+                return null;
             }
         }
 
-        /// <summary>Default constructor.
-        /// </summary>
-        protected Command() : this(DefaultRetryCount) { }
-        /// <summary>Parameterized constructor.
-        /// </summary>
-        /// <param name="retryCount"></param>
-        protected Command(int retryCount) : this(default(TAggregateRootId), retryCount) { }
-        /// <summary>Parameterized constructor.
-        /// </summary>
-        /// <param name="aggregateRootId"></param>
-        protected Command(TAggregateRootId aggregateRootId) : this(aggregateRootId, DefaultRetryCount) { }
-        /// <summary>Parameterized constructor.
-        /// </summary>
-        /// <param name="aggregateRootId"></param>
-        /// <param name="retryCount"></param>
-        protected Command(TAggregateRootId aggregateRootId, int retryCount)
-        {
-            Id = ObjectId.GenerateNewStringId();
-            _aggregateRootId = aggregateRootId;
-            if (aggregateRootId != null)
-            {
-                _aggregateRootStringId = aggregateRootId.ToString();
-            }
-            RetryCount = retryCount;
-        }
-
-        /// <summary>Returns the command type name.
+        /// <summary>Returns the aggregate root id by default.
         /// </summary>
         /// <returns></returns>
-        public override string ToString()
+        public override string GetRoutingKey()
         {
-            return GetType().Name;
+            if (!object.Equals(AggregateRootId, default(TAggregateRootId)))
+            {
+                return ((ICommand)this).AggregateRootId;
+            }
+            return null;
         }
     }
 }

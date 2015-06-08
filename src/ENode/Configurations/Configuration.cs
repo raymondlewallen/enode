@@ -2,17 +2,19 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using ECommon.Configurations;
 using ECommon.Components;
+using ECommon.Configurations;
+using ECommon.Utilities;
 using ENode.Commanding;
 using ENode.Commanding.Impl;
 using ENode.Domain;
 using ENode.Domain.Impl;
 using ENode.Eventing;
 using ENode.Eventing.Impl;
-using ENode.Eventing.Impl.InMemory;
-using ENode.Eventing.Impl.SQL;
 using ENode.Infrastructure;
+using ENode.Infrastructure.Impl;
+using ENode.Infrastructure.Impl.InMemory;
+using ENode.Infrastructure.Impl.SQL;
 using ENode.Snapshoting;
 using ENode.Snapshoting.Impl;
 
@@ -29,29 +31,36 @@ namespace ENode.Configurations
 
         #endregion
 
+        /// <summary>Get the current setting information.
+        /// </summary>
+        public ConfigurationSetting Setting { get; private set; }
+
         /// <summary>Provides the singleton access instance.
         /// </summary>
         public static ENodeConfiguration Instance { get; private set; }
 
         /// <summary>Parameterized constructor.
         /// </summary>
-        private ENodeConfiguration(Configuration configuration)
+        private ENodeConfiguration(Configuration configuration, ConfigurationSetting setting)
         {
-            _configuration = configuration;
+            Ensure.NotNull(configuration, "configuration");
+            Ensure.NotNull(setting, "setting");
             _assemblyInitializerServiceTypes = new List<Type>();
+            _configuration = configuration;
+            Setting = setting;
         }
 
         /// <summary>Create the enode configuration instance.
         /// </summary>
         /// <param name="configuration"></param>
         /// <returns></returns>
-        public static ENodeConfiguration CreateENode(Configuration configuration)
+        public static ENodeConfiguration CreateENode(Configuration configuration, ConfigurationSetting setting)
         {
             if (Instance != null)
             {
-                throw new ENodeException("Could not create enode configuration instance twice.");
+                throw new Exception(string.Format("Could not create enode configuration instance twice."));
             }
-            Instance = new ENodeConfiguration(configuration);
+            Instance = new ENodeConfiguration(configuration, setting);
             return Instance;
         }
 
@@ -66,15 +75,10 @@ namespace ENode.Configurations
         /// </summary>
         public ENodeConfiguration RegisterENodeComponents()
         {
-            _configuration.SetDefault<ICommandHandlerProvider, DefaultCommandHandlerProvider>();
-            _configuration.SetDefault<IAggregateRootInternalHandlerProvider, DefaultAggregateRootInternalHandlerProvider>();
-            _configuration.SetDefault<IEventHandlerProvider, DefaultEventHandlerProvider>();
-            _configuration.SetDefault<IEventSynchronizerProvider, DefaultEventSynchronizerProvider>();
-            _configuration.SetDefault<IAggregateRootTypeCodeProvider, NotImplementedAggregateRootTypeCodeProvider>();
-            _configuration.SetDefault<IEventTypeCodeProvider, NotImplementedEventTypeCodeProvider>();
-            _configuration.SetDefault<IEventHandlerTypeCodeProvider, NotImplementedEventHandlerTypeCodeProvider>();
+            _configuration.SetDefault<ITypeCodeProvider, DefaultTypeCodeProvider>();
+            _configuration.SetDefault<IMessageHandlerProvider, DefaultMessageHandlerProvider>();
 
-            _configuration.SetDefault<IEventSourcingService, DefaultEventSourcingService>();
+            _configuration.SetDefault<IAggregateRootInternalHandlerProvider, DefaultAggregateRootInternalHandlerProvider>();
             _configuration.SetDefault<IAggregateRootFactory, DefaultAggregateRootFactory>();
             _configuration.SetDefault<IMemoryCache, DefaultMemoryCache>();
             _configuration.SetDefault<IAggregateStorage, EventSourcingAggregateStorage>();
@@ -84,27 +88,43 @@ namespace ENode.Configurations
             _configuration.SetDefault<ISnapshotPolicy, NoSnapshotPolicy>();
             _configuration.SetDefault<ISnapshotStore, EmptySnapshotStore>();
 
-            _configuration.SetDefault<IWaitingCommandCache, DefaultWaitingCommandCache>();
-            _configuration.SetDefault<IWaitingCommandService, DefaultWaitingCommandService>();
-            _configuration.SetDefault<IRetryCommandService, DefaultRetryCommandService>();
-            _configuration.SetDefault<ICommandExecutor, DefaultCommandExecutor>();
-            _configuration.SetDefault<ICommandRouteKeyProvider, DefaultCommandRouteKeyProvider>();
+            _configuration.SetDefault<ICommandAsyncHandlerProvider, DefaultCommandAsyncHandlerProvider>();
+            _configuration.SetDefault<ICommandHandlerProvider, DefaultCommandHandlerProvider>();
+            _configuration.SetDefault<ICommandStore, InMemoryCommandStore>();
+            _configuration.SetDefault<ICommandRoutingKeyProvider, DefaultCommandRoutingKeyProvider>();
             _configuration.SetDefault<ICommandService, NotImplementedCommandService>();
-            _configuration.SetDefault<IEventStreamConvertService, DefaultEventStreamConvertService>();
 
+            _configuration.SetDefault<IEventSerializer, DefaultEventSerializer>();
             _configuration.SetDefault<IEventStore, InMemoryEventStore>();
-            _configuration.SetDefault<IEventPublishInfoStore, InMemoryEventPublishInfoStore>();
-            _configuration.SetDefault<IEventHandleInfoStore, InMemoryEventHandleInfoStore>();
-            _configuration.SetDefault<IEventHandleInfoCache, InMemoryEventHandleInfoCache>();
-            _configuration.SetDefault<ICommitEventService, DefaultCommitEventService>();
-            _configuration.SetDefault<IEventProcessor, DefaultEventProcessor>();
-            _configuration.SetDefault<IEventPublisher, NotImplementedEventPublisher>();
+            _configuration.SetDefault<ISequenceMessagePublishedVersionStore, InMemorySequenceMessagePublishedVersionStore>();
+            _configuration.SetDefault<IMessageHandleRecordStore, InMemoryMessageHandleRecordStore>();
+            _configuration.SetDefault<IEventService, DefaultEventService>();
 
-            _assemblyInitializerServiceTypes.Add(typeof(ICommandHandlerProvider));
+            _configuration.SetDefault<IMessageDispatcher, DefaultMessageDispatcher>();
+
+            _configuration.SetDefault<IMessagePublisher<IApplicationMessage>, DoNothingPublisher>();
+            _configuration.SetDefault<IMessagePublisher<DomainEventStreamMessage>, DoNothingPublisher>();
+            _configuration.SetDefault<IMessagePublisher<IPublishableException>, DoNothingPublisher>();
+
+            _configuration.SetDefault<IProcessingMessageHandler<ProcessingCommand, ICommand, CommandResult>, DefaultProcessingCommandHandler>();
+            _configuration.SetDefault<IProcessingMessageHandler<ProcessingApplicationMessage, IApplicationMessage, bool>, DefaultProcessingMessageHandler<ProcessingApplicationMessage, IApplicationMessage, bool>>();
+            _configuration.SetDefault<IProcessingMessageHandler<ProcessingDomainEventStreamMessage, DomainEventStreamMessage, bool>, DomainEventStreamMessageHandler>();
+            _configuration.SetDefault<IProcessingMessageHandler<ProcessingPublishableExceptionMessage, IPublishableException, bool>, DefaultProcessingMessageHandler<ProcessingPublishableExceptionMessage, IPublishableException, bool>>();
+
+            _configuration.SetDefault<IProcessingMessageScheduler<ProcessingCommand, ICommand, CommandResult>, DefaultProcessingMessageScheduler<ProcessingCommand, ICommand, CommandResult>>();
+            _configuration.SetDefault<IProcessingMessageScheduler<ProcessingApplicationMessage, IApplicationMessage, bool>, DefaultProcessingMessageScheduler<ProcessingApplicationMessage, IApplicationMessage, bool>>();
+            _configuration.SetDefault<IProcessingMessageScheduler<ProcessingDomainEventStreamMessage, DomainEventStreamMessage, bool>, DefaultProcessingMessageScheduler<ProcessingDomainEventStreamMessage, DomainEventStreamMessage, bool>>();
+            _configuration.SetDefault<IProcessingMessageScheduler<ProcessingPublishableExceptionMessage, IPublishableException, bool>, DefaultProcessingMessageScheduler<ProcessingPublishableExceptionMessage, IPublishableException, bool>>();
+
+            _configuration.SetDefault<IMessageProcessor<ProcessingCommand, ICommand, CommandResult>, DefaultMessageProcessor<ProcessingCommand, ICommand, CommandResult>>();
+            _configuration.SetDefault<IMessageProcessor<ProcessingApplicationMessage, IApplicationMessage, bool>, DefaultMessageProcessor<ProcessingApplicationMessage, IApplicationMessage, bool>>();
+            _configuration.SetDefault<IMessageProcessor<ProcessingDomainEventStreamMessage, DomainEventStreamMessage, bool>, DefaultMessageProcessor<ProcessingDomainEventStreamMessage, DomainEventStreamMessage, bool>>();
+            _configuration.SetDefault<IMessageProcessor<ProcessingPublishableExceptionMessage, IPublishableException, bool>, DefaultMessageProcessor<ProcessingPublishableExceptionMessage, IPublishableException, bool>>();
+
             _assemblyInitializerServiceTypes.Add(typeof(IAggregateRootInternalHandlerProvider));
-            _assemblyInitializerServiceTypes.Add(typeof(IEventSynchronizerProvider));
-            _assemblyInitializerServiceTypes.Add(typeof(IEventHandlerProvider));
-            _assemblyInitializerServiceTypes.Add(typeof(IEventSourcingService));
+            _assemblyInitializerServiceTypes.Add(typeof(IMessageHandlerProvider));
+            _assemblyInitializerServiceTypes.Add(typeof(ICommandHandlerProvider));
+            _assemblyInitializerServiceTypes.Add(typeof(ICommandAsyncHandlerProvider));
 
             return this;
         }
@@ -114,9 +134,9 @@ namespace ENode.Configurations
         {
             foreach (var assembly in assemblies)
             {
-                foreach (var type in assembly.GetTypes().Where(TypeUtils.IsComponent))
+                foreach (var type in assembly.GetTypes().Where(ENode.Infrastructure.TypeUtils.IsComponent))
                 {
-                    var life = ParseLife(type);
+                    var life = ParseComponentLife(type);
                     ObjectContainer.RegisterType(type, life);
                     foreach (var interfaceType in type.GetInterfaces())
                     {
@@ -130,60 +150,81 @@ namespace ENode.Configurations
             }
             return this;
         }
-        /// <summary>Use the SqlServerEventStore as the IEventStore.
+
+        /// <summary>Use the SqlServerLockService as the ILockService.
         /// </summary>
-        /// <param name="connectionString"></param>
         /// <returns></returns>
-        public ENodeConfiguration UseSqlServerEventStore(string connectionString)
+        public ENodeConfiguration UseSqlServerLockService()
         {
-            return UseSqlServerEventStore(connectionString, "Event", "IX_Event_CommitIndex", "IX_Event_VersionIndex");
-        }
-        /// <summary>Use the SqlServerEventStore as the IEventStore.
-        /// </summary>
-        /// <param name="connectionString"></param>
-        /// <param name="eventTable"></param>
-        /// <param name="commitIndexName"></param>
-        /// <param name="versionIndexName"></param>
-        /// <returns></returns>
-        public ENodeConfiguration UseSqlServerEventStore(string connectionString, string eventTable, string commitIndexName, string versionIndexName)
-        {
-            _configuration.SetDefault<IEventStore, SqlServerEventStore>(new SqlServerEventStore(connectionString, eventTable, commitIndexName, versionIndexName));
+            _configuration.SetDefault<ILockService, SqlServerLockService>();
             return this;
         }
-        /// <summary>Use the SqlServerEventPublishInfoStore as the IEventPublishInfoStore.
+        /// <summary>Use the SqlServerCommandStore as the ICommandStore.
         /// </summary>
-        /// <param name="connectionString"></param>
         /// <returns></returns>
-        public ENodeConfiguration UseSqlServerEventPublishInfoStore(string connectionString)
+        public ENodeConfiguration UseSqlServerCommandStore()
         {
-            return UseSqlServerEventPublishInfoStore(connectionString, "EventPublishInfo");
-        }
-        /// <summary>Use the SqlServerEventPublishInfoStore as the IEventPublishInfoStore.
-        /// </summary>
-        /// <param name="connectionString"></param>
-        /// <param name="eventPublishInfoTable"></param>
-        /// <returns></returns>
-        public ENodeConfiguration UseSqlServerEventPublishInfoStore(string connectionString, string eventPublishInfoTable)
-        {
-            _configuration.SetDefault<IEventPublishInfoStore, SqlServerEventPublishInfoStore>(new SqlServerEventPublishInfoStore(connectionString, eventPublishInfoTable));
+            _configuration.SetDefault<ICommandStore, SqlServerCommandStore>();
             return this;
         }
-        /// <summary>Use the SqlServerEventHandleInfoStore as the IEventHandleInfoStore.
+        /// <summary>Use the SqlServerEventStore as the IEventStore.
         /// </summary>
-        /// <param name="connectionString"></param>
         /// <returns></returns>
-        public ENodeConfiguration UseSqlServerEventHandleInfoStore(string connectionString)
+        public ENodeConfiguration UseSqlServerEventStore()
         {
-            return UseSqlServerEventHandleInfoStore(connectionString, "EventHandleInfo");
+            _configuration.SetDefault<IEventStore, SqlServerEventStore>();
+            return this;
         }
-        /// <summary>Use the SqlServerEventHandleInfoStore as the IEventHandleInfoStore.
+        /// <summary>Use the SqlServerSequenceMessagePublishedVersionStore as the ISequenceMessagePublishedVersionStore.
         /// </summary>
-        /// <param name="connectionString"></param>
-        /// <param name="eventHandleInfoTable"></param>
         /// <returns></returns>
-        public ENodeConfiguration UseSqlServerEventHandleInfoStore(string connectionString, string eventHandleInfoTable)
+        public ENodeConfiguration UseSqlServerSequenceMessagePublishedVersionStore()
         {
-            _configuration.SetDefault<IEventHandleInfoStore, SqlServerEventHandleInfoStore>(new SqlServerEventHandleInfoStore(connectionString, eventHandleInfoTable));
+            _configuration.SetDefault<ISequenceMessagePublishedVersionStore, SqlServerSequenceMessagePublishedVersionStore>();
+            return this;
+        }
+        /// <summary>Use the SqlServerMessageHandleRecordStore as the IMessageHandleRecordStore.
+        /// </summary>
+        /// <returns></returns>
+        public ENodeConfiguration UseSqlServerMessageHandleRecordStore()
+        {
+            _configuration.SetDefault<IMessageHandleRecordStore, SqlServerMessageHandleRecordStore>();
+            return this;
+        }
+        /// <summary>Set the concurrent level for command scheduler.
+        /// </summary>
+        /// <param name="concurrentLevel"></param>
+        /// <returns></returns>
+        public ENodeConfiguration SetCommandSchedulerConcurrentLevel(int concurrentLevel)
+        {
+            ObjectContainer.Resolve<IProcessingMessageScheduler<ProcessingCommand, ICommand, CommandResult>>().SetConcurrencyLevel(concurrentLevel);
+            return this;
+        }
+        /// <summary>Set the concurrent level for application message scheduler.
+        /// </summary>
+        /// <param name="concurrentLevel"></param>
+        /// <returns></returns>
+        public ENodeConfiguration SetApplicationMessageSchedulerConcurrentLevel(int concurrentLevel)
+        {
+            ObjectContainer.Resolve<IProcessingMessageScheduler<ProcessingApplicationMessage, IApplicationMessage, bool>>().SetConcurrencyLevel(concurrentLevel);
+            return this;
+        }
+        /// <summary>Set the concurrent level for domain event scheduler.
+        /// </summary>
+        /// <param name="concurrentLevel"></param>
+        /// <returns></returns>
+        public ENodeConfiguration SetDomainEventSchedulerConcurrentLevel(int concurrentLevel)
+        {
+            ObjectContainer.Resolve<IProcessingMessageScheduler<ProcessingDomainEventStreamMessage, DomainEventStreamMessage, bool>>().SetConcurrencyLevel(concurrentLevel);
+            return this;
+        }
+        /// <summary>Set the concurrent level for exception scheduler.
+        /// </summary>
+        /// <param name="concurrentLevel"></param>
+        /// <returns></returns>
+        public ENodeConfiguration SetExceptionSchedulerConcurrentLevel(int concurrentLevel)
+        {
+            ObjectContainer.Resolve<IProcessingMessageScheduler<ProcessingPublishableExceptionMessage, IPublishableException, bool>>().SetConcurrencyLevel(concurrentLevel);
             return this;
         }
 
@@ -200,23 +241,6 @@ namespace ENode.Configurations
             return this;
         }
 
-        /// <summary>Start the retry command service.
-        /// </summary>
-        /// <returns></returns>
-        public ENodeConfiguration StartRetryCommandService()
-        {
-            ObjectContainer.Resolve<IRetryCommandService>().Start();
-            return this;
-        }
-        /// <summary>Start the waiting command service.
-        /// </summary>
-        /// <returns></returns>
-        public ENodeConfiguration StartWaitingCommandService()
-        {
-            ObjectContainer.Resolve<IWaitingCommandService>().Start();
-            return this;
-        }
-
         #region Private Methods
 
         private static void ValidateSerializableTypes(params Assembly[] assemblies)
@@ -226,20 +250,20 @@ namespace ENode.Configurations
                 foreach (var type in assembly.GetTypes().Where(
                     x => x.IsClass && (
                         typeof(ICommand).IsAssignableFrom(x) ||
+                        typeof(IApplicationMessage).IsAssignableFrom(x) ||
                         typeof(IDomainEvent).IsAssignableFrom(x) ||
                         typeof(IAggregateRoot).IsAssignableFrom(x))))
                 {
                     if (!type.IsSerializable)
                     {
-                        throw new ENodeException("{0} should be marked as serializable.", type.FullName);
+                        throw new Exception(string.Format("{0} should be marked as serializable.", type.FullName));
                     }
                 }
             }
         }
-        private static LifeStyle ParseLife(Type type)
+        private static LifeStyle ParseComponentLife(Type type)
         {
-            var componentAttributes = type.GetCustomAttributes(typeof(ComponentAttribute), false);
-            return !componentAttributes.Any() ? LifeStyle.Transient : ((ComponentAttribute) componentAttributes[0]).LifeStyle;
+            return ((ComponentAttribute)type.GetCustomAttributes(typeof(ComponentAttribute), false)[0]).LifeStyle;
         }
         private static bool IsAssemblyInitializer<T>()
         {
@@ -249,19 +273,15 @@ namespace ENode.Configurations
         {
             return type.IsClass && !type.IsAbstract && typeof(IAssemblyInitializer).IsAssignableFrom(type);
         }
-        private static bool IsAssemblyInitializer(object instance)
-        {
-            return instance is IAssemblyInitializer;
-        }
 
         #endregion
     }
 
     public static class ConfigurationExtensions
     {
-        public static ENodeConfiguration CreateENode(this Configuration configuration)
+        public static ENodeConfiguration CreateENode(this Configuration configuration, ConfigurationSetting setting = null)
         {
-            return ENodeConfiguration.CreateENode(configuration);
+            return ENodeConfiguration.CreateENode(configuration, setting ?? new ConfigurationSetting());
         }
     }
 }

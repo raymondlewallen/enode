@@ -2,7 +2,7 @@
 
 namespace ENode.Commanding
 {
-    /// <summary>Represents a command context environment for command handler handling command.
+    /// <summary>Represents a command context for aggregate command handler handling command.
     /// </summary>
     public interface ICommandContext
     {
@@ -10,13 +10,7 @@ namespace ENode.Commanding
         /// </summary>
         /// <param name="aggregateRoot"></param>
         void Add(IAggregateRoot aggregateRoot);
-        /// <summary>Get an aggregate from the current context.
-        /// <remarks>
-        /// 1. If the aggregate already exist in the current context, then return it directly;
-        /// 2. If not exist then try to get it from memory cache;
-        /// 3. If still not exist then try to get it from event store;
-        /// Finally, if the specified aggregate still not found, then AggregateRootNotFoundException will be raised; otherwise, return the found aggregate.
-        /// </remarks>
+        /// <summary>Get the aggregate from memory cache, if not exist, then get it from event store.
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="id"></param>

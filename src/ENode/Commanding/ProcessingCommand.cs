@@ -1,20 +1,39 @@
-﻿namespace ENode.Commanding
-{
-    public class ProcessingCommand
-    {
-        public ICommand Command { get; private set; }
-        public ICommandExecuteContext CommandExecuteContext { get; private set; }
-        public int RetriedCount { get; private set; }
+﻿using System.Collections.Generic;
+using ENode.Infrastructure;
 
-        public ProcessingCommand(ICommand command, ICommandExecuteContext commandExecuteContext)
+namespace ENode.Commanding
+{
+    public class ProcessingCommand : IProcessingMessage<ProcessingCommand, ICommand, CommandResult>
+    {
+        private ProcessingMessageMailbox<ProcessingCommand, ICommand, CommandResult> _mailbox;
+
+        public ICommand Message { get; private set; }
+        public ICommandExecuteContext CommandExecuteContext { get; private set; }
+        public int ConcurrentRetriedCount { get; private set; }
+        public IDictionary<string, string> Items { get; private set; }
+
+        public ProcessingCommand(ICommand command, ICommandExecuteContext commandExecuteContext, IDictionary<string, string> items)
         {
-            Command = command;
+            Message = command;
             CommandExecuteContext = commandExecuteContext;
+            Items = items ?? new Dictionary<string, string>();
         }
 
-        public void IncreaseRetriedCount()
+        public void SetMailbox(ProcessingMessageMailbox<ProcessingCommand, ICommand, CommandResult> mailbox)
         {
-            RetriedCount++;
+            _mailbox = mailbox;
+        }
+        public void Complete(CommandResult commandResult)
+        {
+            CommandExecuteContext.OnCommandExecuted(commandResult);
+            if (_mailbox != null)
+            {
+                _mailbox.CompleteMessage(this);
+            }
+        }
+        public void IncreaseConcurrentRetriedCount()
+        {
+            ConcurrentRetriedCount++;
         }
     }
 }

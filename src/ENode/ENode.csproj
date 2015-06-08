@@ -10,7 +10,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>ENode</RootNamespace>
     <AssemblyName>ENode</AssemblyName>
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
     <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\..\</SolutionDir>
@@ -27,6 +27,7 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <RunCodeAnalysis>false</RunCodeAnalysis>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -37,101 +38,114 @@
     <WarningLevel>4</WarningLevel>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <DocumentationFile>D:\nugetpublish\ENode.XML</DocumentationFile>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="Commanding\CommandHandlerNotFoundException.cs" />
+    <Compile Include="Commanding\ICommandAsyncHandler.cs" />
+    <Compile Include="Commanding\ICommandAsyncHandlerProvider.cs" />
+    <Compile Include="Commanding\Command.cs" />
+    <Compile Include="Commanding\AggregateRootAlreadyExistException.cs" />
+    <Compile Include="Commanding\CommandSendException.cs" />
     <Compile Include="Commanding\CommandReturnType.cs" />
-    <Compile Include="Commanding\ICommandRouteKeyProvider.cs" />
-    <Compile Include="Commanding\ICommandTypeCodeProvider.cs" />
-    <Compile Include="Commanding\Impl\DefaultCommandRouteKeyProvider.cs" />
-    <Compile Include="Commanding\CommandAggregateRootIdMissingException.cs" />
-    <Compile Include="Commanding\ProcessCommand.cs" />
-    <Compile Include="Commanding\ProcessResult.cs" />
+    <Compile Include="Commanding\HandledCommand.cs" />
+    <Compile Include="Commanding\CommandAddResult.cs" />
+    <Compile Include="Commanding\ICommandHandler.cs" />
+    <Compile Include="Commanding\ICommand.cs" />
+    <Compile Include="Commanding\ICommandAsyncHandlerProxy.cs" />
+    <Compile Include="Commanding\ICommandRoutingKeyProvider.cs" />
+    <Compile Include="Commanding\ICommandStore.cs" />
+    <Compile Include="Commanding\ICommandHandlerProvider.cs" />
+    <Compile Include="Commanding\Impl\CommandAsyncHandlerProxy.cs" />
+    <Compile Include="Commanding\Impl\DefaultProcessingCommandHandler.cs" />
+    <Compile Include="Commanding\Impl\DefaultCommandAsyncHandlerProvider.cs" />
+    <Compile Include="Commanding\Impl\DefaultCommandRoutingKeyProvider.cs" />
+    <Compile Include="Commanding\Impl\SqlServerCommandStore.cs" />
+    <Compile Include="Commanding\Impl\InMemoryCommandStore.cs" />
     <Compile Include="Commanding\CommandResult.cs" />
     <Compile Include="Commanding\Impl\NotImplementedCommandService.cs" />
-    <Compile Include="Commanding\IProcessCommand.cs" />
-    <Compile Include="Commanding\Impl\ProcessingCommandProcessor.cs" />
     <Compile Include="Commanding\ProcessingCommand.cs" />
     <Compile Include="Commanding\ICommandExecuteContext.cs" />
-    <Compile Include="Commanding\Impl\DefaultCommandExecutor.cs" />
-    <Compile Include="Commanding\ICreatingAggregateCommand.cs" />
-    <Compile Include="Commanding\ICommandExecutor.cs" />
-    <Compile Include="Commanding\Impl\DefaultWaitingCommandService.cs" />
-    <Compile Include="Commanding\IWaitingCommandService.cs" />
-    <Compile Include="Commanding\Impl\DefaultWaitingCommandCache.cs" />
-    <Compile Include="Commanding\Impl\DefaultRetryCommandService.cs" />
-    <Compile Include="Commanding\DuplicatedCommandHandlerException.cs" />
-    <Compile Include="Commanding\IWaitingCommandCache.cs" />
+    <Compile Include="Commanding\ICommandProcessor.cs" />
     <Compile Include="Configurations\Configuration.cs" />
+    <Compile Include="Configurations\DbTableSetting.cs" />
+    <Compile Include="Configurations\ConfigurationSetting.cs" />
     <Compile Include="Domain\AggregateRoot.cs" />
     <Compile Include="Domain\IAggregateRoot.cs" />
-    <Compile Include="Domain\IEventSourcingService.cs" />
-    <Compile Include="Domain\Impl\DefaultEventSourcingService.cs" />
     <Compile Include="Domain\IAggregateStorage.cs" />
     <Compile Include="Domain\Impl\EventSourcingAggregateStorage.cs" />
-    <Compile Include="Domain\Impl\NotImplementedAggregateRootTypeCodeProvider.cs" />
-    <Compile Include="Eventing\IEventStreamConvertService.cs" />
+    <Compile Include="Eventing\DomainEventStreamMessage.cs" />
+    <Compile Include="Eventing\IEventSerializer.cs" />
+    <Compile Include="Eventing\Impl\DefaultEventSerializer.cs" />
     <Compile Include="Eventing\EventAppendResult.cs" />
-    <Compile Include="Eventing\EventProcessingContext.cs" />
-    <Compile Include="Eventing\IEventHandlerTypeCodeProvider.cs" />
-    <Compile Include="Eventing\Impl\NotImplementedEventHandlerTypeCodeProvider.cs" />
+    <Compile Include="Eventing\EventCommittingContext.cs" />
+    <Compile Include="Eventing\Impl\DomainEventStreamMessageHandler.cs" />
+    <Compile Include="Infrastructure\ISequenceProcessingMessage.cs" />
+    <Compile Include="Infrastructure\IHandlerProxy.cs" />
+    <Compile Include="Infrastructure\Impl\AbstractHandlerProvider.cs" />
+    <Compile Include="Infrastructure\ApplicationMessage.cs" />
+    <Compile Include="Infrastructure\MessageHandleRecord.cs" />
+    <Compile Include="Infrastructure\Impl\DefaultProcessingMessageHandler.cs" />
+    <Compile Include="Infrastructure\Impl\DefaultMessageProcessor.cs" />
+    <Compile Include="Infrastructure\Impl\DefaultProcessingMessageScheduler.cs" />
+    <Compile Include="Infrastructure\Impl\AbstractSequenceProcessingMessageHandler.cs" />
+    <Compile Include="Infrastructure\IProcessingMessageHandler.cs" />
+    <Compile Include="Infrastructure\IProcessingMessageScheduler.cs" />
+    <Compile Include="Infrastructure\IProcessingMessage.cs" />
+    <Compile Include="Infrastructure\ProcessingPublishableExceptionMessage.cs" />
+    <Compile Include="Infrastructure\ProcessingDomainEventStreamMessage.cs" />
+    <Compile Include="Infrastructure\ProcessingMessageMailbox.cs" />
+    <Compile Include="Infrastructure\ProcessingApplicationMessage.cs" />
+    <Compile Include="Infrastructure\IApplicationMessage.cs" />
+    <Compile Include="Infrastructure\IPublishableException.cs" />
+    <Compile Include="Infrastructure\PublishableException.cs" />
+    <Compile Include="Infrastructure\Impl\MessageHandlerProxy.cs" />
+    <Compile Include="Infrastructure\IMessageHandler.cs" />
+    <Compile Include="Infrastructure\SequenceMessage.cs" />
+    <Compile Include="Infrastructure\TaskFactoryExtensions.cs" />
+    <Compile Include="Infrastructure\IMessageDispatcher.cs" />
+    <Compile Include="Infrastructure\IMessageHandlerProvider.cs" />
+    <Compile Include="Infrastructure\Impl\DefaultMessageDispatcher.cs" />
+    <Compile Include="Infrastructure\Impl\DoNothingPublisher.cs" />
+    <Compile Include="Infrastructure\IMessageHandlerProxy.cs" />
+    <Compile Include="Infrastructure\Impl\DefaultMessageHandlerProvider.cs" />
+    <Compile Include="Infrastructure\IMessageProcessContext.cs" />
+    <Compile Include="Infrastructure\IMessageProcessor.cs" />
+    <Compile Include="Infrastructure\IMessagePublisher.cs" />
+    <Compile Include="Infrastructure\Impl\SQL\SqlServerLockService.cs" />
+    <Compile Include="Infrastructure\ILockService.cs" />
     <Compile Include="Infrastructure\ITypeCodeProvider.cs" />
-    <Compile Include="Eventing\Impl\DefaultEventStreamConvertService.cs" />
-    <Compile Include="Eventing\IEventProcessContext.cs" />
-    <Compile Include="Eventing\ICommitEventService.cs" />
-    <Compile Include="Eventing\IEventTypeCodeProvider.cs" />
-    <Compile Include="Eventing\Impl\DefaultCommitEventService.cs" />
-    <Compile Include="Eventing\Impl\DefaultEventProcessor.cs" />
-    <Compile Include="Eventing\Impl\InMemory\InMemoryEventStore.cs" />
-    <Compile Include="Eventing\Impl\NotImplementedEventTypeCodeProvider.cs" />
-    <Compile Include="Eventing\Impl\NotImplementedEventPublisher.cs" />
-    <Compile Include="Eventing\Impl\SQL\SqlServerEventStore.cs" />
-    <Compile Include="Eventing\IProcessCompletedEvent.cs" />
-    <Compile Include="Eventing\IEventSynchronizer.cs" />
-    <Compile Include="Eventing\Impl\InMemory\InMemoryEventHandleInfoCache.cs" />
-    <Compile Include="Eventing\IEventProcessor.cs" />
-    <Compile Include="Eventing\IEventHandleInfoCache.cs" />
-    <Compile Include="Eventing\EventCommitRecord.cs" />
-    <Compile Include="Infrastructure\DuplicateAggregateException.cs" />
-    <Compile Include="Infrastructure\ENodeException.cs" />
+    <Compile Include="Eventing\IEventService.cs" />
+    <Compile Include="Eventing\Impl\DefaultEventService.cs" />
+    <Compile Include="Eventing\Impl\InMemoryEventStore.cs" />
+    <Compile Include="Eventing\Impl\SqlServerEventStore.cs" />
     <Compile Include="Infrastructure\ConcurrentException.cs" />
-    <Compile Include="Eventing\EventStream.cs" />
+    <Compile Include="Eventing\DomainEventStream.cs" />
     <Compile Include="Eventing\IDomainEvent.cs" />
-    <Compile Include="Eventing\IEventPublisher.cs" />
     <Compile Include="Eventing\IEventStore.cs" />
-    <Compile Include="Eventing\IEventHandler.cs" />
-    <Compile Include="Eventing\IEventHandlerProvider.cs" />
-    <Compile Include="Eventing\Impl\DefaultEventHandlerProvider.cs" />
-    <Compile Include="Eventing\Impl\EventHandlerWrapper.cs" />
     <Compile Include="Eventing\DomainEvent.cs" />
-    <Compile Include="Eventing\Impl\InMemory\InMemoryEventPublishInfoStore.cs" />
-    <Compile Include="Eventing\Impl\SQL\SqlServerEventHandleInfoStore.cs" />
-    <Compile Include="Eventing\Impl\SQL\SqlServerEventPublishInfoStore.cs" />
-    <Compile Include="Eventing\Impl\InMemory\InMemoryEventHandleInfoStore.cs" />
-    <Compile Include="Eventing\IEventPublishInfoStore.cs" />
-    <Compile Include="Eventing\IEventHandleInfoStore.cs" />
-    <Compile Include="Eventing\IEventSynchronizerProvider.cs" />
-    <Compile Include="Eventing\Impl\DefaultEventSynchronizerProvider.cs" />
-    <Compile Include="Eventing\Impl\EventSynchronizerWrapper.cs" />
-    <Compile Include="Infrastructure\AbstractTypeCodeProvider.cs" />
+    <Compile Include="Infrastructure\Impl\InMemory\InMemorySequenceMessagePublishedVersionStore.cs" />
+    <Compile Include="Infrastructure\Impl\SQL\SqlServerMessageHandleRecordStore.cs" />
+    <Compile Include="Infrastructure\Impl\SQL\SqlServerSequenceMessagePublishedVersionStore.cs" />
+    <Compile Include="Infrastructure\Impl\InMemory\InMemoryMessageHandleRecordStore.cs" />
+    <Compile Include="Infrastructure\ISequenceMessagePublishVersionStore.cs" />
+    <Compile Include="Infrastructure\IMessageHandleRecordStore.cs" />
+    <Compile Include="Infrastructure\Impl\DefaultTypeCodeProvider.cs" />
     <Compile Include="Infrastructure\IAssemblyInitializer.cs" />
-    <Compile Include="Commanding\IRetryCommandService.cs" />
     <Compile Include="Commanding\ITrackingContext.cs" />
     <Compile Include="Domain\Impl\EventSourcingRepository.cs" />
     <Compile Include="Domain\IRepository.cs" />
-    <Compile Include="Commanding\Impl\CommandHandlerWrapper.cs" />
+    <Compile Include="Commanding\Impl\CommandHandlerProxy.cs" />
     <Compile Include="Commanding\Impl\DefaultCommandHandlerProvider.cs" />
     <Compile Include="Infrastructure\TypeUtils.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Commanding\ICommandHandlerProvider.cs" />
-    <Compile Include="Domain\IAggregateRootTypeCodeProvider.cs" />
     <Compile Include="Domain\IAggregateRootFactory.cs" />
     <Compile Include="Domain\IAggregateRootInternalHandlerProvider.cs" />
-    <Compile Include="Commanding\ICommand.cs" />
-    <Compile Include="Commanding\Command.cs" />
     <Compile Include="Commanding\ICommandService.cs" />
-    <Compile Include="Commanding\ICommandHandler.cs" />
+    <Compile Include="Commanding\ICommandHandlerProxy.cs" />
+    <Compile Include="Infrastructure\Message.cs" />
+    <Compile Include="Infrastructure\ISequenceMessage.cs" />
+    <Compile Include="Infrastructure\IMessage.cs" />
     <Compile Include="Snapshoting\Impl\EmptySnapshotStore.cs" />
     <Compile Include="Domain\IMemoryCache.cs" />
     <Compile Include="Domain\Impl\DefaultMemoryCache.cs" />
@@ -146,12 +160,16 @@
     <Compile Include="Snapshoting\Impl\DefaultSnapshotter.cs" />
     <Compile Include="Snapshoting\ISnapshotter.cs" />
     <Compile Include="Snapshoting\ISnapshotStore.cs" />
-    <Compile Include="Commanding\AggregateRootNotExistException.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Reference Include="ECommon, Version=1.2.4.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\packages\ECommon.1.2.4\lib\net40\ECommon.dll</HintPath>
+    <Reference Include="Dapper">
+      <HintPath>..\..\packages\Dapper.1.38\lib\net45\Dapper.dll</HintPath>
+    </Reference>
+    <Reference Include="ECommon">
+      <HintPath>..\..\packages\ecommon.1.4.7\lib\net45\ECommon.dll</HintPath>
+    </Reference>
+    <Reference Include="ECommon.Dapper">
+      <HintPath>..\..\packages\ECommon.Dapper.1.4.2\lib\net45\ECommon.Dapper.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System" />
@@ -160,7 +178,7 @@
     <Reference Include="System.Xml.Linq" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Eventing\Impl\SQL\SqlServerTableGenerateSQL.sql" />
+    <Content Include="SqlServerTableGenerateSQL.sql" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

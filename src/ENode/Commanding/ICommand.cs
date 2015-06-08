@@ -1,19 +1,13 @@
-﻿using System;
+﻿using ENode.Infrastructure;
 
 namespace ENode.Commanding
 {
     /// <summary>Represents a command.
     /// </summary>
-    public interface ICommand
+    public interface ICommand : IMessage
     {
-        /// <summary>Represents the unique identifier of the command.
-        /// </summary>
-        string Id { get; }
-        /// <summary>Represents the id of aggregate root which is created or updated by the command.
+        /// <summary>Represents the associated aggregate root string id.
         /// </summary>
         string AggregateRootId { get; }
-        /// <summary>How many times the command should retry if meets concurrent exception.
-        /// </summary>
-        int RetryCount { get; }
     }
 }

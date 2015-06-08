@@ -12,14 +12,14 @@ Blog
 --------------
 http://www.cnblogs.com/netfocus/category/496012.html
 
-Saga sample
---------------
-https://github.com/tangxuehua/BankTransferSample
-
 A simple forum sample
 --------------
 https://github.com/tangxuehua/forum
 
+A conference management and registration sample
+--------------
+https://github.com/tangxuehua/conference
+
 architecture
 --------------
-![alt tag](https://raw.githubusercontent.com/tangxuehua/enode/master/doc/enode%20arch.png)
+![alt tag](https://raw.githubusercontent.com/tangxuehua/enode/master/doc/arch.png)

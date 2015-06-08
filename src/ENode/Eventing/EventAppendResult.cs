@@ -3,6 +3,7 @@
     public enum EventAppendResult
     {
         Success = 1,
-        DuplicateCommit = 2
+        DuplicateEvent = 2,
+        Failed = 3
     }
 }
